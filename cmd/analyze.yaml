@@ -1,0 +1,9 @@
+grafana:
+  remote_url: http://10.0.0.100:30030
+  api_token: eyJrIjoiVjdJdGkzczFERmJ2dTB1WkRZZGRJQ05GeVBDNUt4SmUiLCJuIjoibWltaXJ0b29sIiwiaWQiOjF9
+
+prometheus:
+  remote_url: http://10.0.0.100:30090
+  local_rule_file: ./rules/*.yaml
+
+mimirtool_dir: ./bin
