@@ -27,3 +27,5 @@
 > 
 > mimirtool_dir: ./bin     				# mimirtool 二进制的目录，如果检测到没有，会去github下载二进制到此目录下
 > ```
+
+待做: TODO 生成建议的 relabel 配置
