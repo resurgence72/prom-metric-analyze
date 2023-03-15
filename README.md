@@ -18,12 +18,12 @@
 >
 > ```yaml
 > grafana:
-> 	remote_url: http://10.0.0.100:30030   # 需要分析的grafana的http地址
-> 	api_token: eyJrIjoiVjdJdGkzczFERmJ2dTB1WkRZZGRJQ05GeVBDNUt4SmUiLCJuIjoibWltaXJ0b29sIiwiaWQiOjF9  # 需要申请grafana api-key
+>   remote_url: http://10.0.0.100:30030   # 需要分析的grafana的http地址
+>   api_token: eyJrIjoiVjdJdGkzczFERmJ2dTB1WkRZZGRJQ05GeVBDNUt4SmUiLCJuIjoibWltaXJ0b29sIiwiaWQiOjF9  # 需要申请grafana api-key
 > 
 > prometheus:
-> 	remote_url: http://10.0.0.100:30090   # 需要分析的prometheus地址
-> 	local_rule_file: ./rules/*.yaml       # 需要分析的 prometheus rule 文件，包括rule/record, 支持通配符
+>   remote_url: http://10.0.0.100:30090   # 需要分析的prometheus地址
+>   local_rule_file: ./rules/*.yaml       # 需要分析的 prometheus rule 文件，包括rule/record, 支持通配符
 > 
 > mimirtool_dir: ./bin     				  # mimirtool 二进制的目录，如果检测到没有，会去github下载二进制到此目录下
 > 
