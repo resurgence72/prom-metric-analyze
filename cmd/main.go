@@ -15,7 +15,7 @@ func main() {
 		configPath string
 		h          bool
 	)
-	flag.StringVar(&configPath, "config", "./analyze.yaml", "config file path")
+	flag.StringVar(&configPath, "config.file", "./analyze.yaml", "config file path")
 	flag.BoolVar(&h, "h", false, "help")
 	flag.Parse()
 

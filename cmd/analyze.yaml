@@ -7,3 +7,5 @@ prometheus:
   local_rule_file: ./rules/*.yaml
 
 mimirtool_dir: ./bin
+
+optimization_relabel_type: metric_relabel_configs

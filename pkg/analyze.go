@@ -1,10 +1,13 @@
 package pkg
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"strings"
 
 	"prom-metric-analyze/config"
@@ -19,13 +22,23 @@ const (
 	rulePrefix   = "rule"
 )
 
+type metricAnalyze struct {
+	InUseMetrics []*useMetric `json:"in_use_metric_counts"`
+}
+
+type useMetric struct {
+	Metric string `json:"metric"`
+	Count  int64  `json:"count"`
+}
+
 func StartAnalyze(binary string) error {
 	logrus.Warnln("start analyze")
 	/*
 		1. 通过 Grafana API 分析 Grafana 用到的指标
 		mimirtool analyze grafana --address http://localhost:3000 --key=aaa
 	*/
-	os.Mkdir(tmpDIR, 0777)
+	os.RemoveAll(tmpDIR)
+	os.Mkdir(tmpDIR, 0755)
 
 	grafanaPath := urlToFileName(metricPrefix, config.Get().Grafana.RemoteURL)
 	if err := fetchGrafanaAnalyze(binary, grafanaPath); err != nil {
@@ -39,11 +52,66 @@ func StartAnalyze(binary string) error {
 	}
 
 	// 3. 分析指标
-	analyzeMetrics(binary, grafanaPath, rulePath)
+	metrics, err := analyzeMetrics(binary, grafanaPath, rulePath)
+	if err != nil {
+		return err
+	}
 
-	// TODO 4. 生成优化建议，例如 write_relabel 配置或 metric_relabel 配置
-
+	// 4. 生成优化建议，例如 write_relabel 配置或 metric_relabel 配置
+	generatingOptimalConfig(metrics)
 	return nil
+}
+
+func generatingOptimalConfig(metrics []string) {
+	metricType := make(map[string][]string)
+	compile := regexp.MustCompile("^([a-zA-Z0-9]+?)[:_].*")
+
+	getMetricPrefix := func(m string) string {
+		findString := compile.FindStringSubmatch(m)
+		if len(findString) < 2 {
+			return "others"
+		}
+
+		return findString[len(findString)-1]
+	}
+
+	for _, metric := range metrics {
+		mPre := getMetricPrefix(metric)
+		if _, ok := metricType[mPre]; !ok {
+			metricType[mPre] = []string{metric}
+		} else {
+			metricType[mPre] = append(metricType[mPre], metric)
+		}
+	}
+
+	// 根据前缀生成relabel文件
+	optimizationDIR := "./metrics_analyze_result"
+	os.RemoveAll(optimizationDIR)
+	os.Mkdir(optimizationDIR, 0755)
+
+	var (
+		buf     bytes.Buffer
+		relabel = config.Get().OptimizationRelabelType
+	)
+
+	for k := range metricType {
+		buf.WriteString(relabel)
+		buf.WriteString(":\n")
+		buf.WriteString("- action: keep\n")
+		buf.WriteString("  source_labels: [ __name__ ]\n")
+		buf.WriteString("  regex: ")
+		buf.WriteString(strings.Join(metricType[k], "|"))
+		buf.WriteString("\n")
+
+		f := path.Join(optimizationDIR, fmt.Sprintf("suggest_for_%s_with_prefix_%s", relabel, k))
+		if err := os.WriteFile(f, buf.Bytes(), 0755); err != nil {
+			logrus.Errorln("write analyze result failed", f, err)
+		}
+
+		buf.Reset()
+	}
+
+	logrus.Warnf("The optimized configuration segment has been generated in the %s directory\n", optimizationDIR)
 }
 
 func urlToFileName(preFix string, url string) string {
@@ -59,11 +127,14 @@ func urlToFileName(preFix string, url string) string {
 	return path.Join(tmpDIR, fmt.Sprintf("%s_in_%s_%s.json", preFix, strings.ReplaceAll(gaFileName, ":", "_"), app))
 }
 
-func analyzeMetrics(binary, gPath, rPath string) error {
+func analyzeMetrics(binary, gPath, rPath string) ([]string, error) {
 	/*
 		bin/mimirtool analyze prometheus --address http://10.0.0.100:30090 --grafana-metrics-file ./output/metric_in_10.0.0.100_30030_grafana.json \
 		--ruler-metrics-file ./output/rule_in_10.0.0.100_30090_prometheus.json
 	*/
+	outputFile := ".analyze-result.json"
+	outputPath := path.Join(tmpDIR, outputFile)
+
 	g := config.Get().Prometheus
 	command := []string{
 		binary,
@@ -71,9 +142,30 @@ func analyzeMetrics(binary, gPath, rPath string) error {
 		"--address", g.RemoteURL,
 		"--grafana-metrics-file", gPath,
 		"--ruler-metrics-file", rPath,
-		"--output", path.Join(tmpDIR, ".analyze-result.json"),
+		"--output", outputPath,
 	}
-	return execCommand(command)
+	if err := execCommand(command); err != nil {
+		return nil, err
+	}
+
+	bs, err := os.ReadFile(outputPath)
+	if err != nil {
+		logrus.Errorln("readFile output file failed", err)
+		return nil, err
+	}
+
+	ma := new(metricAnalyze)
+	if err = json.Unmarshal(bs, ma); err != nil {
+		logrus.Errorln("json.Unmarshal output file failed", err)
+		return nil, err
+	}
+
+	var metrics []string
+	for _, m := range ma.InUseMetrics {
+		m := m
+		metrics = append(metrics, m.Metric)
+	}
+	return metrics, nil
 }
 
 func fetchPrometheusRuleAnalyze(binary, prPath string) error {
@@ -110,7 +202,7 @@ func execCommand(command []string) error {
 	}
 
 	if len(out) > 0 {
-		logrus.Warnln("mimirtool output:", string(out))
+		logrus.Warnf("mimirtool output:%s\n\n", string(out))
 	}
 
 	return nil

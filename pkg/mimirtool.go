@@ -16,7 +16,6 @@ const (
 )
 
 func CheckMimirToolBinary() (*string, error) {
-	// 判断是否已经存在二进制
 	p := config.Get().MimirtoolDIR
 	binaryPath := fmt.Sprintf("%s/mimirtool", p)
 	_, err := os.Stat(binaryPath)

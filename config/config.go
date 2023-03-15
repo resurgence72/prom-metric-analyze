@@ -8,9 +8,10 @@ import (
 )
 
 type MetricAnalyze struct {
-	Grafana      *grafana    `yaml:"grafana"`
-	Prometheus   *prometheus `yaml:"prometheus"`
-	MimirtoolDIR string      `yaml:"mimirtool_dir"`
+	Grafana                 *grafana    `yaml:"grafana"`
+	Prometheus              *prometheus `yaml:"prometheus"`
+	MimirtoolDIR            string      `yaml:"mimirtool_dir"`
+	OptimizationRelabelType string      `yaml:"optimization_relabel_type"`
 
 	m sync.Mutex `yaml:"m"`
 }
