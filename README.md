@@ -27,7 +27,7 @@
 > 
 > mimirtool_dir: ./bin     				  # mimirtool 二进制的目录，如果检测到没有，会去github下载二进制到此目录下
 > 
-> optimization_relabel_type: metric_relabel_configss   # 最后需要生成的优化配置段 metric_relabel_configss/write_relabel_configs
+> optimization_relabel_type: metric_relabel_configs   # 最后需要生成的优化配置段 metric_relabel_configs/write_relabel_configs
 > ```
 >
 > #### 1. 项目构建 运行
