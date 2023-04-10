@@ -4,8 +4,8 @@ import (
 	"flag"
 	"os"
 
-	"prom-metric-analyze/config"
 	"prom-metric-analyze/pkg"
+	"prom-metric-analyze/pkg/config"
 
 	"github.com/sirupsen/logrus"
 )

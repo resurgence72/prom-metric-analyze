@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"prom-metric-analyze/config"
+	"prom-metric-analyze/pkg/config"
 
 	"github.com/sirupsen/logrus"
 )
